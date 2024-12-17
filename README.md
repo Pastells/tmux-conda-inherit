@@ -34,7 +34,7 @@ bind '"' run 'tmux split-window -c "#{pane_current_path}" -e "TMUX_PARENT_PANE_I
 bind c run 'tmux new-window -c "#{pane_current_path}" -e "TMUX_PARENT_PANE_ID=#{pane_id}"'
 ```
 
-Add the following lines to your `.bashrc` or `.zshrc`. 
+Add the following lines to your `.bashrc` or `.zshrc`, after the "conda initialize" code block: 
   
 ```sh
 if [[ -n "$TMUX" ]] then
