@@ -48,7 +48,7 @@ Add **after** conda initialization block:
 ```bash
 if [[ -n "$TMUX" ]]; then
   export flavor='micromamba'  # Change to 'conda' or 'mamba' if needed
-  source ~/.config/tmux/plugins/conda-inherit/conda-inherit.sh
+  source ~/.config/tmux/plugins/tmux-conda-inherit/conda-inherit.sh
 fi
 ```
 
@@ -56,7 +56,7 @@ fi
 ```fish
 if set -q TMUX
     set -g flavor micromamba  # Change to 'conda' or 'mamba' if needed
-    source ~/.config/tmux/plugins/conda-inherit/conda-inherit.fish
+    source ~/.config/tmux/plugins/tmux-conda-inherit/conda-inherit.fish
 end
 ```
 
