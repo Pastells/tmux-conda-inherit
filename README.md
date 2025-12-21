@@ -4,9 +4,9 @@ Automatically inherit conda/mamba/micromamba environments when creating new tmux
 
 ## Description
 
-When you split a tmux pane, your conda environment resets to `base`.
-This plugin fixes that by automatically activating the parent pane's environment in new panes and windows. 
-No manual activation needed.
+When you split a tmux pane, your conda environment resets to `base`.  
+This plugin fixes that by automatically activating the parent pane's environment in new panes and windows.  
+No manual activation needed!
 
 **Features:**
 - Automatic environment inheritance from parent panes
@@ -19,29 +19,25 @@ No manual activation needed.
 
 - [tmux](https://github.com/tmux/tmux) >= 3.0
 - [tpm](https://github.com/tmux-plugins/tpm) (Tmux Plugin Manager)
-- bash, zsh, or fish
-- conda/mamba/micromamba (initialized in your shell)
+- [bash](https://www.gnu.org/software/bash/), [zsh](https://zsh.sourceforge.io), or [fish](https://fishshell.com)
+- [conda](https://github.com/conda/conda)/[mamba](https://github.com/mamba-org/mamba)/[micromamba](https://github.com/mamba-org/micromamba-releases) (Initialized in your shell)
 
 ## Installation
 
 ### tmux configuration
 
-Add to `~/.tmux.conf`:
+Add to `~/.config/tmux/tmux.conf` or `~/.tmux.conf`:
 
 ```tmux
 # Install plugin via TPM
 set -g @plugin 'oluevaera/tmux-conda-inherit'
+```
 
-# Configure keybinds to pass parent pane ID
+```tmux
+# Add -e "TMUX_PARENT_PANE_ID=#{pane_id}" to your window split/new keybinds
 bind '%' run 'tmux split-window -c "#{pane_current_path}" -e "TMUX_PARENT_PANE_ID=#{pane_id}" -h'
 bind '"' run 'tmux split-window -c "#{pane_current_path}" -e "TMUX_PARENT_PANE_ID=#{pane_id}" -v'
 bind c run 'tmux new-window -c "#{pane_current_path}" -e "TMUX_PARENT_PANE_ID=#{pane_id}"'
-```
-
-Then reload config and install:
-```bash
-tmux source-file ~/.tmux.conf  # Reload config
-# Press: prefix + I              # Install plugin
 ```
 
 ### Shell configuration
@@ -62,11 +58,6 @@ if set -q TMUX
     set -g flavor micromamba  # Change to 'conda' or 'mamba' if needed
     source ~/.config/tmux/plugins/conda-inherit/conda-inherit.fish
 end
-```
-
-Reload shell:
-```bash
-exec $SHELL
 ```
 
 <details>
