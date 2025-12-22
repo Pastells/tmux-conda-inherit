@@ -29,8 +29,8 @@ eval "$flavor() {
     return \$CONDA_RTN_CODE
   fi
 
-  # Check if first argument is 'activate'
-  if [[ \"\$1\" == \"activate\" ]]; then
+  # Check if first argument is 'activate' or 'deactivate'
+  if [[ \"\$1\" == \"activate\" || \"\$1\" == \"deactivate\" ]]; then
     local TMUX_SESSION_CONDA_ENVS CONDA_ENV_OTHER_PANES entry
     CONDA_ENV_OTHER_PANES=\"\"
     if TMUX_SESSION_CONDA_ENVS=\$(tmux showenv TMUX_SESSION_CONDA_ENVS 2>/dev/null); then
@@ -52,19 +52,20 @@ eval "$flavor() {
         done
       fi
     fi
-    # Add current pane's new entry
+    # Add current pane's new entry (CONDA_DEFAULT_ENV might be empty after deactivate)
     tmux setenv TMUX_SESSION_CONDA_ENVS \"\$TMUX_PANE:\$CONDA_DEFAULT_ENV\$CONDA_ENV_OTHER_PANES\"
   fi
 }"
 
 # Env variable set with the split-window or new-window keybind
 if [[ -n "$TMUX_PARENT_PANE_ID" ]]; then
+  PARENT_ENV_FOUND=0
   if TMUX_SESSION_CONDA_ENVS=$(tmux showenv TMUX_SESSION_CONDA_ENVS 2>/dev/null); then
     # Strip prefix
     TMUX_SESSION_CONDA_ENVS="${TMUX_SESSION_CONDA_ENVS#TMUX_SESSION_CONDA_ENVS=}"
 
     # Clean up: remove entries for closed panes
-    ACTIVE_PANES=$(tmux list-panes -s -F '#{pane_id}' | tr '\n' ' ')
+    ACTIVE_PANES=$(tmux list-panes -s -F '#{pane_id}' 2>/dev/null | tr '\n' ' ')
     CLEANED_ENVS=""
     OLD_IFS="$IFS"
     IFS=' '
@@ -90,7 +91,7 @@ if [[ -n "$TMUX_PARENT_PANE_ID" ]]; then
       done
     fi
     TMUX_SESSION_CONDA_ENVS="${CLEANED_ENVS# }"
-    tmux setenv TMUX_SESSION_CONDA_ENVS "$TMUX_SESSION_CONDA_ENVS"
+    tmux setenv TMUX_SESSION_CONDA_ENVS "$TMUX_SESSION_CONDA_ENVS" 2>/dev/null
 
     # Find parent pane's conda environment
     PARENT_CONDA_ENV=""
@@ -98,6 +99,7 @@ if [[ -n "$TMUX_PARENT_PANE_ID" ]]; then
       for entry in ${=TMUX_SESSION_CONDA_ENVS}; do
         if [[ "${entry%%:*}" == "$TMUX_PARENT_PANE_ID" ]]; then
           PARENT_CONDA_ENV="${entry#*:}"
+          PARENT_ENV_FOUND=1
           break
         fi
       done
@@ -105,14 +107,30 @@ if [[ -n "$TMUX_PARENT_PANE_ID" ]]; then
       for entry in $TMUX_SESSION_CONDA_ENVS; do
         if [[ "${entry%%:*}" == "$TMUX_PARENT_PANE_ID" ]]; then
           PARENT_CONDA_ENV="${entry#*:}"
+          PARENT_ENV_FOUND=1
           break
         fi
       done
     fi
-    if [[ -n "$PARENT_CONDA_ENV" ]]; then
-      "$flavor" activate "$PARENT_CONDA_ENV"
+
+    # Handle parent environment inheritance
+    if [[ $PARENT_ENV_FOUND -eq 1 ]]; then
+      if [[ -n "$PARENT_CONDA_ENV" && "$PARENT_CONDA_ENV" != "$CONDA_DEFAULT_ENV" ]]; then
+        # Parent has an env, activate it
+        "$flavor" activate "$PARENT_CONDA_ENV" 2>/dev/null
+      elif [[ -z "$PARENT_CONDA_ENV" && -n "$CONDA_DEFAULT_ENV" ]]; then
+        # Parent has no env but we do, deactivate to match
+        "$flavor" deactivate 2>/dev/null
+      fi
+    fi
+    IFS="$OLD_IFS"
+  fi
+  unset TMUX_SESSION_CONDA_ENVS PARENT_CONDA_ENV TMUX_PARENT_PANE_ID entry ACTIVE_PANES CLEANED_ENVS pane_id OLD_IFS PARENT_ENV_FOUND
+else
+  # No parent pane (first shell in tmux session) - respect auto_activate_base
+  if [[ -z "$CONDA_DEFAULT_ENV" ]]; then
+    if "$flavor" config --show 2>/dev/null | grep -q "auto_activate_base: True\|auto_activate_base: true"; then
+      "$flavor" activate base 2>/dev/null
     fi
   fi
-  IFS="$OLD_IFS"
-  unset TMUX_SESSION_CONDA_ENVS PARENT_CONDA_ENV TMUX_PARENT_PANE_ID entry ACTIVE_PANES CLEANED_ENVS pane_id OLD_IFS
 fi
