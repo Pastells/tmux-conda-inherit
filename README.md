@@ -1,6 +1,6 @@
 # conda-inherit
 
-Automatically inherit conda/mamba/micromamba environments when creating new tmux panes or windows.
+Automatically inherit conda/mamba/micromamba or uv environments when creating new tmux panes or windows.
 
 ## Description
 
@@ -11,7 +11,7 @@ No manual activation needed!
 **Features:**
 
 - Automatic environment inheritance from parent panes
-- Works with conda, mamba, and micromamba
+- Works with conda, mamba, and micromamba; as well as uv.
 - Supports bash, zsh, and fish
 - Automatic cleanup of closed panes
 - Lightweight with minimal performance impact
@@ -21,7 +21,7 @@ No manual activation needed!
 - [tmux](https://github.com/tmux/tmux) >= 3.0
 - [tpm](https://github.com/tmux-plugins/tpm) (Tmux Plugin Manager)
 - [bash](https://www.gnu.org/software/bash/), [zsh](https://zsh.sourceforge.io), or [fish](https://fishshell.com)
-- [conda](https://github.com/conda/conda)/[mamba](https://github.com/mamba-org/mamba)/[micromamba](https://github.com/mamba-org/micromamba-releases) (Initialized in your shell)
+- [conda](https://github.com/conda/conda)/[mamba](https://github.com/mamba-org/mamba)/[micromamba](https://github.com/mamba-org/micromamba-releases) or [uv](https://github.com/astral-sh/uv) (Initialized in your shell)
 
 ## Installation
 
