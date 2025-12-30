@@ -4,11 +4,12 @@ Automatically inherit conda/mamba/micromamba environments when creating new tmux
 
 ## Description
 
-When you split a tmux pane, your conda environment resets to `base`.  
-This plugin fixes that by automatically activating the parent pane's environment in new panes and windows.  
+When you split a tmux pane, your conda environment resets to `base`.
+This plugin fixes that by automatically activating the parent pane's environment in new panes and windows.
 No manual activation needed!
 
 **Features:**
+
 - Automatic environment inheritance from parent panes
 - Works with conda, mamba, and micromamba
 - Supports bash, zsh, and fish
@@ -45,6 +46,7 @@ bind c run 'tmux new-window -c "#{pane_current_path}" -e "TMUX_PARENT_PANE_ID=#{
 Add **after** conda initialization block:
 
 **Bash/Zsh** (`~/.bashrc` or `~/.zshrc`):
+
 ```bash
 if [[ -n "$TMUX" ]]; then
   export flavor='micromamba'  # Change to 'conda' or 'mamba' if needed
@@ -53,11 +55,39 @@ fi
 ```
 
 **Fish** (`~/.config/fish/config.fish`):
+
 ```fish
 if set -q TMUX
     set -g flavor micromamba  # Change to 'conda' or 'mamba' if needed
     source ~/.config/tmux/plugins/tmux-conda-inherit/conda-inherit.fish
 end
+```
+
+### UV support (bash/zsh only)
+
+```bash
+__tmux_uv_sync() {
+  [[ -z "$TMUX" ]] && return
+
+  local current_env="${VIRTUAL_ENV:-}"
+  local envs
+
+  envs="$(tmux showenv TMUX_SESSION_CONDA_ENVS 2>/dev/null \
+            | sed 's/^TMUX_SESSION_CONDA_ENVS=//' \
+            | sed "s|$TMUX_PANE:[^ ]*||")"
+
+  # normalize whitespace
+  envs="$(echo "$envs" | xargs)"
+
+  tmux setenv TMUX_SESSION_CONDA_ENVS "$envs $TMUX_PANE:$current_env" 2>/dev/null
+}
+
+if [[ -n "$TMUX" ]]; then
+  export flavor='uv'
+  source ~/.config/tmux/plugins/tmux-conda-inherit/conda-inherit.sh
+  autoload -Uz add-zsh-hook
+  add-zsh-hook precmd __tmux_uv_sync
+fi
 ```
 
 <details>
@@ -73,6 +103,7 @@ end
 ### Environment Storage
 
 The plugin maintains `TMUX_SESSION_CONDA_ENVS` containing space-separated pairs:
+
 ```
 %0:myenv %1:myenv %2:otherenv
 ```
@@ -86,9 +117,11 @@ The plugin maintains `TMUX_SESSION_CONDA_ENVS` containing space-separated pairs:
 ### Troubleshooting
 
 **"Error: conda function not found"**
+
 - Conda must be initialized before sourcing this plugin
 
 **Environments not inheriting**
+
 - Check tmux version: `tmux -V` (must be >= 3.0)
 - Verify keybinds include `-e "TMUX_PARENT_PANE_ID=#{pane_id}"`
 - Restart tmux: `tmux kill-server` then `tmux`

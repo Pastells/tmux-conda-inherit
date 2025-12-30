@@ -6,6 +6,50 @@ if [[ -z "$flavor" ]]; then
   return 1
 fi
 
+#############
+# UV
+#############
+
+if [[ "$flavor" == "uv" ]]; then
+    # On pane creation: inherit parent's VIRTUAL_ENV
+    if [[ -n "$ZSH_VERSION" ]]; then
+        for entry in ${=TMUX_SESSION_CONDA_ENVS}; do
+            if [[ "${entry%%:*}" == "$TMUX_PARENT_PANE_ID" ]]; then
+                parent_venv="${entry#*:}"
+                if [[ -n "$parent_venv" && -f "$parent_venv/bin/activate" ]]; then
+                    source "$parent_venv/bin/activate"
+                fi
+                break
+            fi
+        done
+    else
+        for entry in $TMUX_SESSION_CONDA_ENVS; do
+            if [[ "${entry%%:*}" == "$TMUX_PARENT_PANE_ID" ]]; then
+                parent_venv="${entry#*:}"
+                if [[ -n "$parent_venv" && -f "$parent_venv/bin/activate" ]]; then
+                    source "$parent_venv/bin/activate"
+                fi
+                break
+            fi
+        done
+    fi
+
+
+  # Record current pane's VIRTUAL_ENV
+  if [[ -n "$TMUX" ]]; then
+      current_env="${VIRTUAL_ENV:-}"
+      tmux setenv TMUX_SESSION_CONDA_ENVS \
+          "$(tmux showenv TMUX_SESSION_CONDA_ENVS 2>/dev/null | sed 's/^TMUX_SESSION_CONDA_ENVS=//' | sed "s|$TMUX_PANE:[^ ]*||") $TMUX_PANE:$current_env"
+  fi
+
+  return 0
+fi
+
+
+#############
+# CONDA
+#############
+
 # Get function definition
 flavor_definition=$(declare -f "$flavor")
 if [[ -z "$flavor_definition" ]]; then
